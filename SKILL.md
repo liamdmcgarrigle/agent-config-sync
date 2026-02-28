@@ -40,6 +40,11 @@ Use skills instead of plugins whenever possible.
 - **npx skills** (from skills.sh / vercel-labs/skills) - Universal skill package manager
 - **Git submodules** - For version-pinned, team-shared skill repos
 
+**Important:** When installing skills with `npx skills add`, always use the `--copy` flag.
+By default, the skills CLI installs via symlinks (`.claude/skills/foo -> .agents/skills/foo`),
+but vsync cannot follow symlinks when reading the source directory, causing it to see 0 skills.
+The `--copy` flag writes real files that vsync can read.
+
 **Skill directories per tool:**
 | Tool | Skills Dir | MCP Config |
 |------|-----------|------------|
@@ -125,6 +130,42 @@ Create `.git/hooks/pre-commit` with executable permissions (`chmod +x`):
 ```sh
 #!/bin/sh
 
+# Block commit if symlinked skills are detected in .claude/skills/
+# vsync cannot follow symlinks, so symlinked skills will NOT sync to other tools.
+SYMLINKED_SKILLS=""
+if [ -d ".claude/skills" ]; then
+  for entry in .claude/skills/*; do
+    [ -e "$entry" ] || continue
+    if [ -L "$entry" ]; then
+      SYMLINKED_SKILLS="$SYMLINKED_SKILLS  $(basename "$entry")\n"
+    fi
+  done
+fi
+
+if [ -n "$SYMLINKED_SKILLS" ]; then
+  echo ""
+  echo "============================================================"
+  echo "  ERROR: Symlinked skills detected in .claude/skills/"
+  echo "============================================================"
+  echo ""
+  echo "  The following skills are symlinks:"
+  printf "$SYMLINKED_SKILLS"
+  echo ""
+  echo "  vsync cannot read symlinked skills and will NOT sync them"
+  echo "  to Cursor, OpenCode, or Codex."
+  echo ""
+  echo "  To fix, reinstall with --copy:"
+  echo "    npx skills remove <skill-name>"
+  echo "    npx skills add <owner/repo> -a claude-code --copy"
+  echo ""
+  echo "  Or manually replace the symlink with real files:"
+  echo "    rm .claude/skills/<name>"
+  echo "    cp -r .agents/skills/<name> .claude/skills/<name>"
+  echo "============================================================"
+  echo ""
+  exit 1
+fi
+
 # Warn if plugins are being used instead of skills
 # Plugins are Claude Code-only and break cross-tool parity
 if [ -f ".claude/settings.json" ]; then
@@ -139,7 +180,7 @@ if [ -f ".claude/settings.json" ]; then
     echo ""
     echo "  For cross-tool compatibility, prefer:"
     echo "    npx skills find \"<keyword>\"     # search for a skill"
-    echo "    npx skills add <repo> -a claude-code  # install skill"
+    echo "    npx skills add <repo> -a claude-code --copy"
     echo ""
     echo "  Skills use the universal SKILL.md format and sync to"
     echo "  all tools via vsync automatically."
@@ -149,9 +190,8 @@ if [ -f ".claude/settings.json" ]; then
 fi
 ```
 
-This hook warns but does NOT block the commit. Some plugins (like typescript-lsp)
-are legitimately Claude Code-only and that is fine -- the warning just reminds the
-user to prefer skills when a cross-tool alternative exists.
+The symlink check **blocks** the commit because symlinked skills silently fail to sync.
+The plugin check warns but does NOT block -- some plugins are legitimately Claude Code-only.
 
 ### Step 4: Run initial sync
 
@@ -184,7 +224,7 @@ name, description, and install count.
 ### Step 2: Install to Claude Code only
 
 ```bash
-npx skills add <owner/repo> --skill <skill-name> -a claude-code
+npx skills add <owner/repo> --skill <skill-name> -a claude-code --copy
 ```
 
 Always install to `claude-code` only. Claude Code is the source of truth -- vsync
@@ -207,7 +247,7 @@ Or just commit -- the post-commit hook runs vsync automatically.
 npx skills find "svelte"
 
 # Install the one they pick
-npx skills add spences10/svelte-claude-skills --skill svelte5-runes -a claude-code
+npx skills add spences10/svelte-claude-skills --skill svelte5-runes -a claude-code --copy
 
 # Sync (or just commit and the hook does it)
 npx @nicepkg/vsync sync -y
@@ -356,7 +396,9 @@ Update all skills and MCP configs across all tools.
 
 ```bash
 # Update skills installed via npx skills
-npx skills update
+# Note: `npx skills update` only works for globally-installed skills.
+# For project-scoped skills, re-add them with --copy:
+npx skills add <owner/repo> -a claude-code --copy -y
 
 # Update skills installed as git submodules
 git submodule update --remote --merge
@@ -378,6 +420,13 @@ The post-commit hook will handle syncing automatically.
 ---
 
 ## Troubleshooting
+
+### vsync reads "0 skills" or says "everything is up to date" but skills aren't synced
+- Run `ls -la .claude/skills/` -- if entries show `->` arrows, they are **symlinks**
+- vsync cannot follow symlinks in the source directory and will silently skip them
+- This happens when skills are installed with `npx skills add` without `--copy`
+- Fix: reinstall with `npx skills add <owner/repo> -a claude-code --copy`
+- Or manually: `rm .claude/skills/<name> && cp -r .agents/skills/<name> .claude/skills/<name>`
 
 ### vsync says "everything is up to date" but target tools are empty
 - Check that `.claude/skills/` actually contains skill directories with SKILL.md files

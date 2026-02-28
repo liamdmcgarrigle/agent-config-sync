@@ -7,14 +7,16 @@ Claude Code acts as the single source of truth. Changes propagate to all other t
 ## Install
 
 ```bash
-npx skills add liamdmcgarrigle/agent-config-sync
+npx skills add liamdmcgarrigle/agent-config-sync --copy
 ```
 
 Or install to a specific agent:
 
 ```bash
-npx skills add liamdmcgarrigle/agent-config-sync -a claude-code
+npx skills add liamdmcgarrigle/agent-config-sync -a claude-code --copy
 ```
+
+> **Why `--copy`?** This skill uses [vsync](https://github.com/nicepkg/vsync) to sync skills across tools. vsync cannot follow symlinks, so skills must be copied as real files. Without `--copy`, the skills CLI creates symlinks that vsync silently skips.
 
 <details>
 <summary>Alternative: git submodule</summary>
