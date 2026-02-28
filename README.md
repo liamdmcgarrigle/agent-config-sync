@@ -34,7 +34,7 @@ git submodule add https://github.com/liamdmcgarrigle/agent-config-sync.git .clau
 Once installed, ask your agent to "set up agent sync" and it will:
 
 1. **Configure vsync** — creates `.vsync.json` to sync skills, MCP servers, agents, and commands from Claude Code to Cursor, OpenCode, and Codex
-2. **Set up git hooks** — a post-commit hook that auto-syncs after every commit, and a pre-commit hook that warns if Claude Code-only plugins are detected
+2. **Set up git hooks** — a post-commit hook that auto-syncs after every commit, keeps `AGENTS.md` in sync with `CLAUDE.md`, and a pre-commit hook that warns if Claude Code-only plugins are detected
 3. **Search & install skills** — uses `npx skills` (from [skills.sh](https://skills.sh)) to find and install skills to Claude Code, then syncs to all tools
 4. **Search & add MCP servers** — adds servers to `.mcp.json` and syncs with automatic format conversion (JSON/TOML/JSONC) per tool
 5. **Manage skill submodules** — for version-pinned, team-shared skills via git submodules
@@ -63,6 +63,8 @@ Claude Code (.claude/)          -- SOURCE OF TRUTH
 ```
 
 Skills use the universal [Agent Skills](https://agentskills.io) SKILL.md format, which works across all four tools. MCP server configs are converted between formats automatically by vsync.
+
+The post-commit hook also keeps `AGENTS.md` in sync with `CLAUDE.md`. If you update your `CLAUDE.md`, the hook automatically copies it to `AGENTS.md` and commits the change, so both files always have identical contents.
 
 ## Requirements
 
