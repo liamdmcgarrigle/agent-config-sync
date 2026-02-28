@@ -1,5 +1,5 @@
 ---
-name: agent-sync-setup
+name: agent-config-sync
 license: MIT
 description: >
   MUST be used whenever the user wants to add, install, find, or search for a skill,
