@@ -109,6 +109,13 @@ Create `.git/hooks/post-commit` with executable permissions (`chmod +x`):
 # Sync configs from Claude Code to all target tools
 npx @nicepkg/vsync sync -y
 
+# Keep AGENTS.md in sync with CLAUDE.md
+if [ -f "CLAUDE.md" ]; then
+  if ! cmp -s "CLAUDE.md" "AGENTS.md" 2>/dev/null; then
+    cp "CLAUDE.md" "AGENTS.md"
+  fi
+fi
+
 # All paths that vsync may create or modify
 SYNC_PATHS=".mcp.json opencode.json AGENTS.md CLAUDE.md .cursor/skills .codex/skills .opencode"
 
