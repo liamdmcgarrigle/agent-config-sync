@@ -104,10 +104,14 @@ Create `.git/hooks/post-commit` with executable permissions (`chmod +x`):
 # Sync configs from Claude Code to all target tools
 npx @nicepkg/vsync sync -y
 
-# If vsync changed any config files, auto-commit them
-SYNC_FILES=".mcp.json opencode.json AGENTS.md CLAUDE.md .cursor .opencode .codex"
-if ! git diff --quiet $SYNC_FILES 2>/dev/null; then
-  git add $SYNC_FILES 2>/dev/null
+# All paths that vsync may create or modify
+SYNC_PATHS=".mcp.json opencode.json AGENTS.md CLAUDE.md .cursor/skills .codex/skills .opencode"
+
+# Stage any new or modified sync files (handles both tracked and untracked)
+git add --ignore-errors $SYNC_PATHS 2>/dev/null
+
+# Check if staging actually picked up changes
+if ! git diff --cached --quiet 2>/dev/null; then
   VSYNC_RUNNING=1 git commit --no-verify \
     --author="vsync agent sync <vsync@local>" \
     -m "chore: sync agent configs [vsync]"

@@ -1,4 +1,4 @@
-# agent-sync-setup
+# agent-config-sync
 
 An agent skill that sets up cross-tool configuration syncing so that **Claude Code, OpenCode, Codex, and Cursor** all share identical skills and MCP servers.
 
@@ -7,12 +7,25 @@ Claude Code acts as the single source of truth. Changes propagate to all other t
 ## Install
 
 ```bash
-# Via npx skills
-npx skills add liammcgarrigle/agent-sync-setup -a claude-code
-
-# Or via git submodule
-git submodule add https://github.com/liammcgarrigle/agent-sync-setup.git .claude/skills/agent-sync-setup
+npx skills add liamdmcgarrigle/agent-config-sync
 ```
+
+Or install to a specific agent:
+
+```bash
+npx skills add liamdmcgarrigle/agent-config-sync -a claude-code
+```
+
+<details>
+<summary>Alternative: git submodule</summary>
+
+For version-pinned installs tracked in your repo:
+
+```bash
+git submodule add https://github.com/liamdmcgarrigle/agent-config-sync.git .claude/skills/agent-config-sync
+```
+
+</details>
 
 ## What it does
 
